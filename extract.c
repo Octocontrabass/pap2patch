@@ -74,28 +74,81 @@ int main( int argc, char * * argv )
                 segment[k] = __builtin_bswap32( segment[k] );
             }
             foffset += 0x14;
-            printf( " %08"PRIx32" %08"PRIx32" %08"PRIx32" %08"PRIx32" %08"PRIx32"\n", segment[0], segment[1], segment[2], segment[3], segment[4] );
-            if( segment[0] == 0x10 )
+            printf( " %08"PRIx32" %08"PRIx32" %08"PRIx32" %08"PRIx32" %08"PRIx32, segment[0], segment[1], segment[2], segment[3], segment[4] );
+            switch( segment[0] )
             {
-                char name[22];
-                sprintf( name, "%08"PRIx32"_%08"PRIx32".bin", i, j );
-                FILE * outfile = fopen( name, "wb" );
-                uint8_t byte;
-                z_stream stream = { &fw[soffset + segment[1] + 8], size - (soffset + segment[1] + 8), 0, &byte, 1, 0, NULL, NULL, NULL, NULL, NULL, 0, 0, 0 };
-                inflateInit2( &stream, -15 );
-                int zret = inflate( &stream, Z_SYNC_FLUSH );
-                while( zret == Z_OK )
+                case 0x1:
                 {
-                    fputc( byte, outfile );
-                    stream.next_out = &byte;
-                    stream.avail_out = 1;
-                    zret = inflate( &stream, Z_SYNC_FLUSH );
+                    printf( " - copy 0x%"PRIx32" bytes from 0x%"PRIx32" to 0x%"PRIx32"\n", (uint32_t)(segment[3] * 4), segment[1], segment[2] );
+                    break;
                 }
-                if( zret == Z_STREAM_END )
+                case 0x2:
                 {
-                    fputc( byte, outfile );
+                    printf( " - clear 0x%"PRIx32" bytes from 0x%"PRIx32"\n", (uint32_t)(segment[2] * 4), segment[1] );
+                    break;
                 }
-                //printf( "%d\n", zret );
+                case 0x3:
+                {
+                    printf( " - jump to 0x%"PRIx32"\n", (uint32_t)(segment[1] * 4) );
+                    break;
+                }
+                // case 0x4: call segment[1]
+                case 0x5:
+                {
+                    printf( " - r24 (code segment?) 0x%"PRIx32" (0x%"PRIx32")\n", segment[1], (uint32_t)(segment[1] * 4) );
+                    break;
+                }
+                case 0x6:
+                {
+                    printf( " - r25 (data segment?) 0x%"PRIx32"\n", segment[1] );
+                    break;
+                }
+                case 0x7:
+                {
+                    printf( " - r23 (code segment?) 0x%"PRIx32" (0x%"PRIx32")\n", segment[1], (uint32_t)(segment[1] * 4) );
+                    break;
+                }
+                // case 0x8: r4 (a0?) = segment[1]
+                // case 0x9: r5 (a1?) = segment[1]
+                // case 0xa: r22 = segment[1]
+                // case 0xb: r29 (sp?) = segment[1]
+                // case 0xc: r19 = segment[1]
+                case 0x10:
+                {
+                    printf( " - decompress 0x%"PRIx32" to 0x%"PRIx32" (", segment[1], segment[2] );
+                    uint32_t temp;
+                    memcpy( &temp, &fw[soffset + segment[1]], sizeof(uint32_t) );
+                    printf( "0x%"PRIx32", ", __builtin_bswap32( temp ) );
+                    memcpy( &temp, &fw[soffset + segment[1] + 4], sizeof(uint32_t) );
+                    printf( "0x%"PRIx32") - ", __builtin_bswap32( temp ) );
+                    char name[22];
+                    sprintf( name, "%08"PRIx32"_%08"PRIx32".bin", i, j );
+                    FILE * outfile = fopen( name, "wb" );
+                    uint8_t byte;
+                    z_stream stream = { &fw[soffset + segment[1] + 8], size - (soffset + segment[1] + 8), 0, &byte, 1, 0, NULL, NULL, NULL, NULL, NULL, 0, 0, 0 };
+                    inflateInit2( &stream, -15 );
+                    int zret = inflate( &stream, Z_SYNC_FLUSH );
+                    while( zret == Z_OK )
+                    {
+                        fputc( byte, outfile );
+                        stream.next_out = &byte;
+                        stream.avail_out = 1;
+                        zret = inflate( &stream, Z_SYNC_FLUSH );
+                    }
+                    if( zret == Z_STREAM_END )
+                    {
+                        fputc( byte, outfile );
+                    }
+                    //printf( "%d\n", zret );
+                    printf( "0x%lx\n", stream.total_in );
+                    inflateEnd( &stream );
+                    break;
+                }
+                default:
+                {
+                    printf( "\n" );
+                    break;
+                }
             }
         }
             
