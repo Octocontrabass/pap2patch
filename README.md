@@ -14,3 +14,18 @@ password. I did it this way, since I figured out how to crash into recovery
 mode before I figured out how to patch the firmware.
 
 Goodbye carrier locks. Hello [modem over IP](https://gekk.info/articles/ata-config.html).
+
+Todo: additional sanity checks in case your copy of gzip isn't the same as mine.
+
+Todo: finish hash/checksum recalculation so patch tool actually works.
+
+Until then, take the output of the current incomplete patch tool and add the
+following patches:
+
+* At `0x30` replace the MD5 with `79 D7 1E DF 3D B9 11 DB 8C B8 9B 6C 93 AA 4F 80`.
+* At `0x90` and `0x210` replace the MD5 with `DA 54 1E CC 3E 2C 71 92 9B F9 99 EC 23 B9 39 84`.
+* At `0xFF` and `0x27F` replace the checksum with `74`.
+
+> Knowing that the programmer might one day return and finish the program...
+> 
+> It fills you with determination.
