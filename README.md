@@ -1,5 +1,7 @@
 # Linksys PAP2 Firmware Patch
 
+This patch applies to PAP2 firmware 3.1.23, which is the newest version.
+
 To remove the password prompt from the web server, change the instruction at
 memory address `0xed2c0` from `0x60053019` to `0x60013019`. It's at offset
 `0x12c0` in the decompressed data. Recompressing is just gzip without the
@@ -14,6 +16,9 @@ password. I did it this way, since I figured out how to crash into recovery
 mode before I figured out how to patch the firmware.
 
 Goodbye carrier locks. Hello [modem over IP](https://gekk.info/articles/ata-config.html).
+
+* [PAP2 firmware 3.1.23 from Cisco.](https://community.cisco.com/t5/voice-systems-and-accessories-small-business/same-firmware-for-pap2-and-pap2t/m-p/1240279/highlight/true#M65182)
+* [PAP2 recovery tool from Cisco.](https://community.cisco.com/t5/voice-systems-and-accessories-small-business/pap2-na-in-sos-mode-help-needed/m-p/1399412/highlight/true#M57323)
 
 Todo: additional sanity checks in case your copy of gzip isn't the same as mine.
 
